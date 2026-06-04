@@ -8,7 +8,6 @@ type TeamKey = "red_points" | "yellow_points" | "green_points" | "blue_points";
 type GameScore = {
   id: string;
   game_date: string;
-  category: string | null;
   game_name: string;
   display_order: number | null;
   red_points: number;
@@ -24,7 +23,6 @@ const teams: { label: string; key: TeamKey }[] = [
   { label: "Blu", key: "blue_points" },
 ];
 
-const categories = ["Gioco", "Coro", "Ordine", "Pulizia", "Bonus", "Altro"];
 const positionPoints = [100, 80, 60, 40];
 
 function todayISO() {
@@ -35,12 +33,10 @@ export default function PunteggiPage() {
   const [scores, setScores] = useState<GameScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const [mode, setMode] = useState<"manual" | "ranking">("manual");
   const [gameDate, setGameDate] = useState(todayISO());
-  const [category, setCategory] = useState("Gioco");
   const [gameName, setGameName] = useState("");
   const [displayOrder, setDisplayOrder] = useState<number>(1);
 
@@ -93,7 +89,6 @@ export default function PunteggiPage() {
 
   function resetForm() {
     setEditingId(null);
-    setCategory("Gioco");
     setGameName("");
     setPoints({
       red_points: 0,
@@ -108,7 +103,6 @@ export default function PunteggiPage() {
   function editScore(score: GameScore) {
     setEditingId(score.id);
     setGameDate(score.game_date);
-    setCategory(score.category ?? "Gioco");
     setGameName(score.game_name);
     setDisplayOrder(score.display_order ?? 1);
     setMode("manual");
@@ -134,7 +128,7 @@ export default function PunteggiPage() {
     e.preventDefault();
 
     if (!gameName.trim()) {
-      alert("Inserisci il nome dell'attività.");
+      alert("Inserisci il nome del gioco.");
       return;
     }
 
@@ -158,7 +152,7 @@ export default function PunteggiPage() {
 
     const payload = {
       game_date: gameDate,
-      category,
+      category: "Gioco",
       game_name: gameName.trim(),
       display_order: displayOrder,
       red_points: finalPoints.red_points,
@@ -206,8 +200,8 @@ export default function PunteggiPage() {
             <p style={styles.subtitle}>Inserimento risultati oratorio estivo</p>
           </div>
 
-          <a href="/tv-punteggi" target="_blank" style={styles.tvLink}>
-            Apri TV
+          <a href="/classifica" target="_blank" style={styles.tvLink}>
+            Apri Classifica
           </a>
         </div>
 
@@ -221,46 +215,29 @@ export default function PunteggiPage() {
         )}
 
         <form onSubmit={saveScore} style={styles.form}>
-          <div style={styles.twoColumns}>
-            <label style={styles.label}>
-              Data
-              <input
-                type="date"
-                value={gameDate}
-                onChange={(e) => setGameDate(e.target.value)}
-                style={styles.input}
-              />
-            </label>
-
-            <label style={styles.label}>
-              Ordine visualizzazione
-              <input
-                type="number"
-                min="1"
-                value={displayOrder}
-                onChange={(e) => setDisplayOrder(Number(e.target.value))}
-                style={styles.input}
-              />
-            </label>
-          </div>
-
           <label style={styles.label}>
-            Categoria
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+            Data
+            <input
+              type="date"
+              value={gameDate}
+              onChange={(e) => setGameDate(e.target.value)}
               style={styles.input}
-            >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
+            />
           </label>
 
           <label style={styles.label}>
-            Nome attività
+            Ordine visualizzazione
+            <input
+              type="number"
+              min="1"
+              value={displayOrder}
+              onChange={(e) => setDisplayOrder(Number(e.target.value))}
+              style={styles.input}
+            />
+          </label>
+
+          <label style={styles.label}>
+            Nome gioco
             <input
               value={gameName}
               onChange={(e) => setGameName(e.target.value)}
@@ -283,7 +260,7 @@ export default function PunteggiPage() {
                 onClick={() => setMode("ranking")}
                 style={mode === "ranking" ? styles.modeButtonActive : styles.modeButton}
               >
-                Classifica attività
+                Classifica gioco
               </button>
             </div>
           )}
@@ -316,10 +293,18 @@ export default function PunteggiPage() {
                     <span>{team.label}</span>
                     <span>{positionPoints[index]} punti</span>
                     <div style={styles.rowButtons}>
-                      <button type="button" onClick={() => moveTeam(index, -1)} style={styles.smallButton}>
+                      <button
+                        type="button"
+                        onClick={() => moveTeam(index, -1)}
+                        style={styles.smallButton}
+                      >
                         ↑
                       </button>
-                      <button type="button" onClick={() => moveTeam(index, 1)} style={styles.smallButton}>
+                      <button
+                        type="button"
+                        onClick={() => moveTeam(index, 1)}
+                        style={styles.smallButton}
+                      >
                         ↓
                       </button>
                     </div>
@@ -352,8 +337,7 @@ export default function PunteggiPage() {
               <div key={score.id} style={styles.scoreRow}>
                 <div style={styles.scoreInfo}>
                   <div style={styles.rowMeta}>
-                    <span>{score.display_order ?? "-"}</span>
-                    <span>{score.category ?? "Gioco"}</span>
+                    <span>Ordine {score.display_order ?? "-"}</span>
                   </div>
                   <strong>{score.game_name}</strong>
                   <div style={styles.points}>
@@ -396,6 +380,7 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#1f2937",
     borderRadius: 18,
     padding: 24,
+    overflow: "hidden",
   },
   topBar: {
     display: "flex",
@@ -405,7 +390,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexWrap: "wrap",
   },
   title: {
-    fontSize: "clamp(36px, 10vw, 64px)",
+    fontSize: "clamp(34px, 9vw, 56px)",
     margin: 0,
     lineHeight: 1.05,
   },
@@ -452,11 +437,8 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     gap: 18,
     marginTop: 24,
-  },
-  twoColumns: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: 14,
+    width: "100%",
+    boxSizing: "border-box",
   },
   grid: {
     display: "grid",
@@ -469,6 +451,8 @@ const styles: Record<string, React.CSSProperties> = {
     gap: 8,
     fontWeight: 700,
     minWidth: 0,
+    width: "100%",
+    boxSizing: "border-box",
   },
   input: {
     padding: "14px 16px",
@@ -478,6 +462,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "white",
     fontSize: 18,
     width: "100%",
+    maxWidth: "100%",
     boxSizing: "border-box",
   },
   modeSelector: {
