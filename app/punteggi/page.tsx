@@ -36,13 +36,18 @@ export default function PunteggiPage() {
   const [gameDate, setGameDate] = useState(todayISO());
   const [gameName, setGameName] = useState("");
 
-  const [positionPoints, setPositionPoints] = useState([100, 80, 60, 40]);
+  const [positionPoints, setPositionPoints] = useState<string[]>([
+    "100",
+    "80",
+    "60",
+    "40",
+  ]);
 
-  const [points, setPoints] = useState<Record<TeamKey, number>>({
-    red_points: 0,
-    yellow_points: 0,
-    green_points: 0,
-    blue_points: 0,
+  const [points, setPoints] = useState<Record<TeamKey, string>>({
+    red_points: "",
+    yellow_points: "",
+    green_points: "",
+    blue_points: "",
   });
 
   const [rankingOrder, setRankingOrder] = useState<TeamKey[]>([
@@ -76,10 +81,10 @@ export default function PunteggiPage() {
     setEditingId(null);
     setGameName("");
     setPoints({
-      red_points: 0,
-      yellow_points: 0,
-      green_points: 0,
-      blue_points: 0,
+      red_points: "",
+      yellow_points: "",
+      green_points: "",
+      blue_points: "",
     });
     setRankingOrder(["red_points", "yellow_points", "green_points", "blue_points"]);
     setMode("manual");
@@ -91,10 +96,10 @@ export default function PunteggiPage() {
     setGameName(score.game_name);
     setMode("manual");
     setPoints({
-      red_points: score.red_points,
-      yellow_points: score.yellow_points,
-      green_points: score.green_points,
-      blue_points: score.blue_points,
+      red_points: String(score.red_points),
+      yellow_points: String(score.yellow_points),
+      green_points: String(score.green_points),
+      blue_points: String(score.blue_points),
     });
 
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -108,7 +113,7 @@ export default function PunteggiPage() {
     setRankingOrder(next);
   }
 
-  function updatePositionPoint(index: number, value: number) {
+  function updatePositionPoint(index: number, value: string) {
     const next = [...positionPoints];
     next[index] = value;
     setPositionPoints(next);
@@ -122,12 +127,21 @@ export default function PunteggiPage() {
       return;
     }
 
+    const manualPoints: Record<TeamKey, number> = {
+      red_points: Number(points.red_points || 0),
+      yellow_points: Number(points.yellow_points || 0),
+      green_points: Number(points.green_points || 0),
+      blue_points: Number(points.blue_points || 0),
+    };
+
+    const rankingPoints = positionPoints.map((value) => Number(value || 0));
+
     const finalPoints =
       mode === "manual"
-        ? points
+        ? manualPoints
         : rankingOrder.reduce(
             (acc, teamKey, index) => {
-              acc[teamKey] = positionPoints[index];
+              acc[teamKey] = rankingPoints[index] ?? 0;
               return acc;
             },
             {
@@ -250,10 +264,12 @@ export default function PunteggiPage() {
                   {team.label}
                   <input
                     type="number"
+                    inputMode="numeric"
                     min="0"
                     value={points[team.key]}
+                    placeholder="0"
                     onChange={(e) =>
-                      setPoints({ ...points, [team.key]: Number(e.target.value) })
+                      setPoints({ ...points, [team.key]: e.target.value })
                     }
                     style={styles.input}
                   />
@@ -270,10 +286,12 @@ export default function PunteggiPage() {
                       {index + 1}° posto
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="0"
                         value={value}
+                        placeholder="0"
                         onChange={(e) =>
-                          updatePositionPoint(index, Number(e.target.value))
+                          updatePositionPoint(index, e.target.value)
                         }
                         style={styles.input}
                       />
@@ -289,7 +307,7 @@ export default function PunteggiPage() {
                   <div key={teamKey} style={styles.rankingInputRow}>
                     <strong>{index + 1}°</strong>
                     <span>{team.label}</span>
-                    <span>{positionPoints[index]} punti</span>
+                    <span>{Number(positionPoints[index] || 0)} punti</span>
                     <div style={styles.rowButtons}>
                       <button
                         type="button"
