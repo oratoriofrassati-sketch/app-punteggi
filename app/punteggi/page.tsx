@@ -213,7 +213,7 @@ export default function PunteggiPage() {
 
         {editingId && (
           <div style={styles.editBanner}>
-            Stai modificando un punteggio già inserito.
+            <span>Stai modificando un punteggio già inserito.</span>
             <button type="button" onClick={resetForm} style={styles.cancelEditButton}>
               Annulla modifica
             </button>
@@ -316,10 +316,10 @@ export default function PunteggiPage() {
                     <span>{team.label}</span>
                     <span>{positionPoints[index]} punti</span>
                     <div style={styles.rowButtons}>
-                      <button type="button" onClick={() => moveTeam(index, -1)}>
+                      <button type="button" onClick={() => moveTeam(index, -1)} style={styles.smallButton}>
                         ↑
                       </button>
-                      <button type="button" onClick={() => moveTeam(index, 1)}>
+                      <button type="button" onClick={() => moveTeam(index, 1)} style={styles.smallButton}>
                         ↓
                       </button>
                     </div>
@@ -350,7 +350,7 @@ export default function PunteggiPage() {
           <div style={styles.list}>
             {filteredScores.map((score) => (
               <div key={score.id} style={styles.scoreRow}>
-                <div>
+                <div style={styles.scoreInfo}>
                   <div style={styles.rowMeta}>
                     <span>{score.display_order ?? "-"}</span>
                     <span>{score.category ?? "Gioco"}</span>
@@ -384,11 +384,14 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: "100vh",
     background: "#111827",
     color: "white",
-    padding: 24,
+    padding: 16,
     fontFamily: "system-ui, sans-serif",
+    boxSizing: "border-box",
   },
   card: {
     maxWidth: 900,
+    width: "100%",
+    boxSizing: "border-box",
     margin: "0 auto 24px",
     background: "#1f2937",
     borderRadius: 18,
@@ -399,14 +402,18 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "space-between",
     gap: 18,
     alignItems: "flex-start",
+    flexWrap: "wrap",
   },
   title: {
-    fontSize: 34,
+    fontSize: "clamp(36px, 10vw, 64px)",
     margin: 0,
+    lineHeight: 1.05,
   },
   subtitle: {
     color: "#cbd5e1",
     marginTop: 8,
+    fontSize: 18,
+    lineHeight: 1.4,
   },
   tvLink: {
     background: "#38bdf8",
@@ -428,6 +435,7 @@ const styles: Record<string, React.CSSProperties> = {
     justifyContent: "space-between",
     gap: 12,
     alignItems: "center",
+    flexWrap: "wrap",
     fontWeight: 800,
   },
   cancelEditButton: {
@@ -447,7 +455,7 @@ const styles: Record<string, React.CSSProperties> = {
   },
   twoColumns: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
     gap: 14,
   },
   grid: {
@@ -460,6 +468,7 @@ const styles: Record<string, React.CSSProperties> = {
     flexDirection: "column",
     gap: 8,
     fontWeight: 700,
+    minWidth: 0,
   },
   input: {
     padding: "14px 16px",
@@ -469,10 +478,11 @@ const styles: Record<string, React.CSSProperties> = {
     color: "white",
     fontSize: 18,
     width: "100%",
+    boxSizing: "border-box",
   },
   modeSelector: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
     gap: 12,
   },
   modeButton: {
@@ -483,6 +493,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "white",
     fontWeight: 800,
     cursor: "pointer",
+    fontSize: 16,
   },
   modeButtonActive: {
     padding: 14,
@@ -492,6 +503,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#111827",
     fontWeight: 900,
     cursor: "pointer",
+    fontSize: 16,
   },
   rankingInput: {
     display: "flex",
@@ -500,9 +512,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   rankingInputRow: {
     display: "grid",
-    gridTemplateColumns: "50px 1fr 110px 90px",
+    gridTemplateColumns: "42px 1fr",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
     background: "#0f172a",
     padding: 14,
     borderRadius: 12,
@@ -510,6 +522,17 @@ const styles: Record<string, React.CSSProperties> = {
   rowButtons: {
     display: "flex",
     gap: 8,
+    gridColumn: "1 / -1",
+  },
+  smallButton: {
+    flex: 1,
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "1px solid #475569",
+    background: "#111827",
+    color: "white",
+    fontWeight: 900,
+    cursor: "pointer",
   },
   button: {
     padding: "16px 18px",
@@ -538,6 +561,11 @@ const styles: Record<string, React.CSSProperties> = {
     background: "#0f172a",
     padding: 16,
     borderRadius: 14,
+    flexWrap: "wrap",
+  },
+  scoreInfo: {
+    minWidth: 0,
+    flex: "1 1 260px",
   },
   rowMeta: {
     display: "flex",
@@ -551,10 +579,12 @@ const styles: Record<string, React.CSSProperties> = {
   points: {
     marginTop: 6,
     color: "#cbd5e1",
+    lineHeight: 1.4,
   },
   actions: {
     display: "flex",
     gap: 8,
+    flexWrap: "wrap",
   },
   editButton: {
     background: "#38bdf8",
