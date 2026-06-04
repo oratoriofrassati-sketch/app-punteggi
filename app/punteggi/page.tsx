@@ -38,7 +38,6 @@ export default function PunteggiPage() {
   const [mode, setMode] = useState<"manual" | "ranking">("manual");
   const [gameDate, setGameDate] = useState(todayISO());
   const [gameName, setGameName] = useState("");
-  const [displayOrder, setDisplayOrder] = useState<number>(1);
 
   const [points, setPoints] = useState<Record<TeamKey, number>>({
     red_points: 0,
@@ -75,17 +74,15 @@ export default function PunteggiPage() {
     [scores, gameDate]
   );
 
-  useEffect(() => {
-    if (editingId) return;
-
+  function getNextDisplayOrder() {
     const sameDay = scores.filter((s) => s.game_date === gameDate);
     const maxOrder = sameDay.reduce(
       (max, score) => Math.max(max, score.display_order ?? 0),
       0
     );
 
-    setDisplayOrder(maxOrder + 1);
-  }, [gameDate, scores, editingId]);
+    return maxOrder + 1;
+  }
 
   function resetForm() {
     setEditingId(null);
@@ -104,7 +101,6 @@ export default function PunteggiPage() {
     setEditingId(score.id);
     setGameDate(score.game_date);
     setGameName(score.game_name);
-    setDisplayOrder(score.display_order ?? 1);
     setMode("manual");
     setPoints({
       red_points: score.red_points,
@@ -122,6 +118,47 @@ export default function PunteggiPage() {
     if (target < 0 || target >= next.length) return;
     [next[index], next[target]] = [next[target], next[index]];
     setRankingOrder(next);
+  }
+
+  async function moveScore(score: GameScore, direction: -1 | 1) {
+    const ordered = [...filteredScores].sort(
+      (a, b) =>
+        (a.display_order ?? 9999) - (b.display_order ?? 9999) ||
+        a.game_name.localeCompare(b.game_name)
+    );
+
+    const index = ordered.findIndex((item) => item.id === score.id);
+    const targetIndex = index + direction;
+
+    if (index < 0 || targetIndex < 0 || targetIndex >= ordered.length) return;
+
+    const current = ordered[index];
+    const target = ordered[targetIndex];
+
+    const currentOrder = current.display_order ?? index + 1;
+    const targetOrder = target.display_order ?? targetIndex + 1;
+
+    const { error: firstError } = await supabase
+      .from("game_scores")
+      .update({ display_order: targetOrder, updated_at: new Date().toISOString() })
+      .eq("id", current.id);
+
+    if (firstError) {
+      alert("Errore riordinamento: " + firstError.message);
+      return;
+    }
+
+    const { error: secondError } = await supabase
+      .from("game_scores")
+      .update({ display_order: currentOrder, updated_at: new Date().toISOString() })
+      .eq("id", target.id);
+
+    if (secondError) {
+      alert("Errore riordinamento: " + secondError.message);
+      return;
+    }
+
+    loadScores();
   }
 
   async function saveScore(e: React.FormEvent) {
@@ -154,7 +191,7 @@ export default function PunteggiPage() {
       game_date: gameDate,
       category: "Gioco",
       game_name: gameName.trim(),
-      display_order: displayOrder,
+      display_order: editingId ? undefined : getNextDisplayOrder(),
       red_points: finalPoints.red_points,
       yellow_points: finalPoints.yellow_points,
       green_points: finalPoints.green_points,
@@ -163,7 +200,19 @@ export default function PunteggiPage() {
     };
 
     const { error } = editingId
-      ? await supabase.from("game_scores").update(payload).eq("id", editingId)
+      ? await supabase
+          .from("game_scores")
+          .update({
+            game_date: payload.game_date,
+            category: payload.category,
+            game_name: payload.game_name,
+            red_points: payload.red_points,
+            yellow_points: payload.yellow_points,
+            green_points: payload.green_points,
+            blue_points: payload.blue_points,
+            updated_at: payload.updated_at,
+          })
+          .eq("id", editingId)
       : await supabase.from("game_scores").insert(payload);
 
     setSaving(false);
@@ -221,17 +270,6 @@ export default function PunteggiPage() {
               type="date"
               value={gameDate}
               onChange={(e) => setGameDate(e.target.value)}
-              style={styles.input}
-            />
-          </label>
-
-          <label style={styles.label}>
-            Ordine visualizzazione
-            <input
-              type="number"
-              min="1"
-              value={displayOrder}
-              onChange={(e) => setDisplayOrder(Number(e.target.value))}
               style={styles.input}
             />
           </label>
@@ -333,12 +371,32 @@ export default function PunteggiPage() {
           <p>Nessun punteggio inserito per questa data.</p>
         ) : (
           <div style={styles.list}>
-            {filteredScores.map((score) => (
+            {filteredScores.map((score, index) => (
               <div key={score.id} style={styles.scoreRow}>
+                <div style={styles.reorderButtons}>
+                  <button
+                    type="button"
+                    onClick={() => moveScore(score, -1)}
+                    disabled={index === 0}
+                    style={index === 0 ? styles.reorderButtonDisabled : styles.reorderButton}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => moveScore(score, 1)}
+                    disabled={index === filteredScores.length - 1}
+                    style={
+                      index === filteredScores.length - 1
+                        ? styles.reorderButtonDisabled
+                        : styles.reorderButton
+                    }
+                  >
+                    ↓
+                  </button>
+                </div>
+
                 <div style={styles.scoreInfo}>
-                  <div style={styles.rowMeta}>
-                    <span>Ordine {score.display_order ?? "-"}</span>
-                  </div>
                   <strong>{score.game_name}</strong>
                   <div style={styles.points}>
                     Rossi {score.red_points} · Gialli {score.yellow_points} · Verdi{" "}
@@ -540,7 +598,6 @@ const styles: Record<string, React.CSSProperties> = {
   },
   scoreRow: {
     display: "flex",
-    justifyContent: "space-between",
     gap: 14,
     alignItems: "center",
     background: "#0f172a",
@@ -548,18 +605,34 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: 14,
     flexWrap: "wrap",
   },
+  reorderButtons: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  },
+  reorderButton: {
+    width: 38,
+    height: 34,
+    borderRadius: 10,
+    border: "1px solid #475569",
+    background: "#111827",
+    color: "white",
+    fontWeight: 900,
+    cursor: "pointer",
+  },
+  reorderButtonDisabled: {
+    width: 38,
+    height: 34,
+    borderRadius: 10,
+    border: "1px solid #334155",
+    background: "#0f172a",
+    color: "#475569",
+    fontWeight: 900,
+    cursor: "not-allowed",
+  },
   scoreInfo: {
     minWidth: 0,
-    flex: "1 1 260px",
-  },
-  rowMeta: {
-    display: "flex",
-    gap: 8,
-    marginBottom: 6,
-    color: "#94a3b8",
-    fontSize: 13,
-    fontWeight: 900,
-    textTransform: "uppercase",
+    flex: "1 1 220px",
   },
   points: {
     marginTop: 6,
