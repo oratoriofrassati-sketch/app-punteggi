@@ -114,6 +114,12 @@ export default function ClassificaMobilePage() {
         <p style={styles.updated}>Aggiornato alle {formatTime(lastUpdate)}</p>
       </header>
 
+<a href="/statistiche" style={styles.statsButton}>
+
+  Statistiche
+
+</a>
+
       <section style={styles.card}>
         <h2 style={styles.sectionTitle}>Classifica generale</h2>
         <RankingList teams={generalRanking} highlightLeader />
@@ -370,4 +376,15 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 22,
     fontWeight: 950,
   },
+
+  statsButton: {
+  display: "inline-block",
+  background: "#facc15",
+  color: "#111827",
+  textDecoration: "none",
+  padding: "12px 16px",
+  borderRadius: 12,
+  fontWeight: 900,
+  marginTop: 10,
+},
 };
