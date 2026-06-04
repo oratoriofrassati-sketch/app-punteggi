@@ -9,7 +9,6 @@ type GameScore = {
   id: string;
   game_date: string;
   game_name: string;
-  display_order: number | null;
   red_points: number;
   yellow_points: number;
   green_points: number;
@@ -22,8 +21,6 @@ const teams: { label: string; key: TeamKey }[] = [
   { label: "Verdi", key: "green_points" },
   { label: "Blu", key: "blue_points" },
 ];
-
-const positionPoints = [100, 80, 60, 40];
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
@@ -38,6 +35,8 @@ export default function PunteggiPage() {
   const [mode, setMode] = useState<"manual" | "ranking">("manual");
   const [gameDate, setGameDate] = useState(todayISO());
   const [gameName, setGameName] = useState("");
+
+  const [positionPoints, setPositionPoints] = useState([100, 80, 60, 40]);
 
   const [points, setPoints] = useState<Record<TeamKey, number>>({
     red_points: 0,
@@ -58,8 +57,7 @@ export default function PunteggiPage() {
       .from("game_scores")
       .select("*")
       .order("game_date", { ascending: false })
-      .order("display_order", { ascending: true, nullsFirst: false })
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: true });
 
     if (!error && data) setScores(data);
     setLoading(false);
@@ -73,16 +71,6 @@ export default function PunteggiPage() {
     () => scores.filter((s) => s.game_date === gameDate),
     [scores, gameDate]
   );
-
-  function getNextDisplayOrder() {
-    const sameDay = scores.filter((s) => s.game_date === gameDate);
-    const maxOrder = sameDay.reduce(
-      (max, score) => Math.max(max, score.display_order ?? 0),
-      0
-    );
-
-    return maxOrder + 1;
-  }
 
   function resetForm() {
     setEditingId(null);
@@ -120,45 +108,10 @@ export default function PunteggiPage() {
     setRankingOrder(next);
   }
 
-  async function moveScore(score: GameScore, direction: -1 | 1) {
-    const ordered = [...filteredScores].sort(
-      (a, b) =>
-        (a.display_order ?? 9999) - (b.display_order ?? 9999) ||
-        a.game_name.localeCompare(b.game_name)
-    );
-
-    const index = ordered.findIndex((item) => item.id === score.id);
-    const targetIndex = index + direction;
-
-    if (index < 0 || targetIndex < 0 || targetIndex >= ordered.length) return;
-
-    const current = ordered[index];
-    const target = ordered[targetIndex];
-
-    const currentOrder = current.display_order ?? index + 1;
-    const targetOrder = target.display_order ?? targetIndex + 1;
-
-    const { error: firstError } = await supabase
-      .from("game_scores")
-      .update({ display_order: targetOrder, updated_at: new Date().toISOString() })
-      .eq("id", current.id);
-
-    if (firstError) {
-      alert("Errore riordinamento: " + firstError.message);
-      return;
-    }
-
-    const { error: secondError } = await supabase
-      .from("game_scores")
-      .update({ display_order: currentOrder, updated_at: new Date().toISOString() })
-      .eq("id", target.id);
-
-    if (secondError) {
-      alert("Errore riordinamento: " + secondError.message);
-      return;
-    }
-
-    loadScores();
+  function updatePositionPoint(index: number, value: number) {
+    const next = [...positionPoints];
+    next[index] = value;
+    setPositionPoints(next);
   }
 
   async function saveScore(e: React.FormEvent) {
@@ -191,7 +144,6 @@ export default function PunteggiPage() {
       game_date: gameDate,
       category: "Gioco",
       game_name: gameName.trim(),
-      display_order: editingId ? undefined : getNextDisplayOrder(),
       red_points: finalPoints.red_points,
       yellow_points: finalPoints.yellow_points,
       green_points: finalPoints.green_points,
@@ -200,19 +152,7 @@ export default function PunteggiPage() {
     };
 
     const { error } = editingId
-      ? await supabase
-          .from("game_scores")
-          .update({
-            game_date: payload.game_date,
-            category: payload.category,
-            game_name: payload.game_name,
-            red_points: payload.red_points,
-            yellow_points: payload.yellow_points,
-            green_points: payload.green_points,
-            blue_points: payload.blue_points,
-            updated_at: payload.updated_at,
-          })
-          .eq("id", editingId)
+      ? await supabase.from("game_scores").update(payload).eq("id", editingId)
       : await supabase.from("game_scores").insert(payload);
 
     setSaving(false);
@@ -322,6 +262,26 @@ export default function PunteggiPage() {
             </div>
           ) : (
             <div style={styles.rankingInput}>
+              <div style={styles.defaultPointsBox}>
+                <strong>Punti assegnati per posizione</strong>
+                <div style={styles.defaultPointsGrid}>
+                  {positionPoints.map((value, index) => (
+                    <label key={index} style={styles.label}>
+                      {index + 1}° posto
+                      <input
+                        type="number"
+                        min="0"
+                        value={value}
+                        onChange={(e) =>
+                          updatePositionPoint(index, Number(e.target.value))
+                        }
+                        style={styles.input}
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               {rankingOrder.map((teamKey, index) => {
                 const team = teams.find((t) => t.key === teamKey)!;
 
@@ -371,31 +331,8 @@ export default function PunteggiPage() {
           <p>Nessun punteggio inserito per questa data.</p>
         ) : (
           <div style={styles.list}>
-            {filteredScores.map((score, index) => (
+            {filteredScores.map((score) => (
               <div key={score.id} style={styles.scoreRow}>
-                <div style={styles.reorderButtons}>
-                  <button
-                    type="button"
-                    onClick={() => moveScore(score, -1)}
-                    disabled={index === 0}
-                    style={index === 0 ? styles.reorderButtonDisabled : styles.reorderButton}
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moveScore(score, 1)}
-                    disabled={index === filteredScores.length - 1}
-                    style={
-                      index === filteredScores.length - 1
-                        ? styles.reorderButtonDisabled
-                        : styles.reorderButton
-                    }
-                  >
-                    ↓
-                  </button>
-                </div>
-
                 <div style={styles.scoreInfo}>
                   <strong>{score.game_name}</strong>
                   <div style={styles.points}>
@@ -548,6 +485,18 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: "pointer",
     fontSize: 16,
   },
+  defaultPointsBox: {
+    background: "#0f172a",
+    borderRadius: 14,
+    padding: 14,
+    border: "1px solid #334155",
+  },
+  defaultPointsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+    gap: 12,
+    marginTop: 12,
+  },
   rankingInput: {
     display: "flex",
     flexDirection: "column",
@@ -604,31 +553,6 @@ const styles: Record<string, React.CSSProperties> = {
     padding: 16,
     borderRadius: 14,
     flexWrap: "wrap",
-  },
-  reorderButtons: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 6,
-  },
-  reorderButton: {
-    width: 38,
-    height: 34,
-    borderRadius: 10,
-    border: "1px solid #475569",
-    background: "#111827",
-    color: "white",
-    fontWeight: 900,
-    cursor: "pointer",
-  },
-  reorderButtonDisabled: {
-    width: 38,
-    height: 34,
-    borderRadius: 10,
-    border: "1px solid #334155",
-    background: "#0f172a",
-    color: "#475569",
-    fontWeight: 900,
-    cursor: "not-allowed",
   },
   scoreInfo: {
     minWidth: 0,

@@ -66,7 +66,6 @@ export default function ClassificaMobilePage() {
       .from("game_scores")
       .select("*")
       .order("game_date", { ascending: false })
-      .order("display_order", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: true });
 
     if (!error && data) {
