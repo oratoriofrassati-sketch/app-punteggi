@@ -8,9 +8,7 @@ type TeamKey = "red_points" | "yellow_points" | "green_points" | "blue_points";
 type GameScore = {
   id: string;
   game_date: string;
-  category: string | null;
   game_name: string;
-  display_order: number | null;
   red_points: number;
   yellow_points: number;
   green_points: number;
@@ -27,10 +25,10 @@ type Team = {
 };
 
 const teamsBase: Omit<Team, "total">[] = [
-  { name: "Rossi", key: "red_points", color: "#ef4444" },
-  { name: "Gialli", key: "yellow_points", color: "#facc15" },
-  { name: "Verdi", key: "green_points", color: "#22c55e" },
-  { name: "Blu", key: "blue_points", color: "#3b82f6" },
+  { name: "Rossi", key: "red_points", color: "#dc2626" },
+  { name: "Gialli", key: "yellow_points", color: "#ca8a04" },
+  { name: "Verdi", key: "green_points", color: "#16a34a" },
+  { name: "Blu", key: "blue_points", color: "#2563eb" },
 ];
 
 function todayISO() {
@@ -191,7 +189,7 @@ function ScoreTable({
   return (
     <div style={styles.table}>
       <div style={small ? styles.tableHeaderSmall : styles.tableHeader}>
-        <div>Attività</div>
+        <div>Gioco</div>
         <div>R</div>
         <div>G</div>
         <div>V</div>
@@ -273,8 +271,8 @@ const styles: Record<string, React.CSSProperties> = {
     width: "100vw",
     height: "100vh",
     overflow: "hidden",
-    background: "linear-gradient(135deg, #020617, #111827)",
-    color: "white",
+    background: "#f8fafc",
+    color: "#0f172a",
     display: "grid",
     gridTemplateColumns: "70% 30%",
     gap: 24,
@@ -288,10 +286,12 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: 0,
   },
   rightColumn: {
-    background: "rgba(255,255,255,0.08)",
+    background: "#ffffff",
+    border: "3px solid #cbd5e1",
     borderRadius: 28,
     padding: 26,
     minHeight: 0,
+    boxShadow: "0 12px 28px rgba(15,23,42,0.12)",
   },
   header: {
     display: "flex",
@@ -304,21 +304,23 @@ const styles: Record<string, React.CSSProperties> = {
   },
   title: {
     margin: 0,
-    fontSize: 50,
+    fontSize: 54,
     lineHeight: 1,
     fontWeight: 950,
+    color: "#020617",
   },
   date: {
     margin: 0,
-    color: "#e5e7eb",
-    fontSize: 21,
+    color: "#1e293b",
+    fontSize: 23,
     textTransform: "capitalize",
+    fontWeight: 900,
   },
   updated: {
     margin: "6px 0 0",
-    color: "#94a3b8",
-    fontSize: 15,
-    fontWeight: 700,
+    color: "#475569",
+    fontSize: 16,
+    fontWeight: 800,
   },
   contentGrid: {
     display: "grid",
@@ -328,47 +330,60 @@ const styles: Record<string, React.CSSProperties> = {
     minHeight: 0,
   },
   panel: {
-    background: "rgba(255,255,255,0.08)",
+    background: "#ffffff",
+    border: "3px solid #cbd5e1",
     borderRadius: 28,
     padding: 24,
     minHeight: 0,
     overflow: "hidden",
+    boxShadow: "0 12px 28px rgba(15,23,42,0.12)",
   },
   todayRankingPanel: {
-    background: "rgba(255,255,255,0.08)",
+    background: "#ffffff",
+    border: "3px solid #cbd5e1",
     borderRadius: 28,
     padding: 22,
     minHeight: 0,
+    boxShadow: "0 12px 28px rgba(15,23,42,0.12)",
   },
   panelSmall: {
-    background: "rgba(255,255,255,0.06)",
+    background: "#ffffff",
+    border: "3px solid #cbd5e1",
     borderRadius: 24,
     padding: 20,
     flex: 0.75,
     minHeight: 0,
     overflow: "hidden",
+    boxShadow: "0 12px 28px rgba(15,23,42,0.12)",
   },
   panelTitle: {
     margin: "0 0 14px",
-    fontSize: 32,
+    fontSize: 34,
+    color: "#020617",
+    fontWeight: 950,
   },
   todayRankingTitle: {
     margin: "0 0 14px",
-    fontSize: 23,
+    fontSize: 24,
     lineHeight: 1.1,
+    color: "#020617",
+    fontWeight: 950,
   },
   panelTitleSmall: {
     margin: "0 0 10px",
-    fontSize: 23,
-    color: "#cbd5e1",
+    fontSize: 24,
+    color: "#334155",
+    fontWeight: 950,
   },
   empty: {
     fontSize: 25,
-    color: "#cbd5e1",
+    color: "#475569",
+    fontWeight: 800,
   },
   emptySmall: {
     fontSize: 18,
-    color: "#94a3b8",
+    color: "#64748b",
+    fontWeight: 800,
   },
   table: {
     display: "flex",
@@ -377,45 +392,47 @@ const styles: Record<string, React.CSSProperties> = {
   },
   tableHeader: {
     display: "grid",
-    gridTemplateColumns: "1fr 60px 60px 60px 60px",
-    fontSize: 18,
-    color: "#cbd5e1",
-    fontWeight: 800,
+    gridTemplateColumns: "1fr 64px 64px 64px 64px",
+    fontSize: 19,
+    color: "#334155",
+    fontWeight: 950,
     padding: "0 10px",
   },
   tableHeaderSmall: {
     display: "grid",
-    gridTemplateColumns: "1fr 50px 50px 50px 50px",
-    fontSize: 16,
-    color: "#94a3b8",
-    fontWeight: 800,
+    gridTemplateColumns: "1fr 52px 52px 52px 52px",
+    fontSize: 17,
+    color: "#475569",
+    fontWeight: 950,
     padding: "0 10px",
   },
   tableRow: {
     display: "grid",
-    gridTemplateColumns: "1fr 60px 60px 60px 60px",
+    gridTemplateColumns: "1fr 64px 64px 64px 64px",
     alignItems: "center",
-    background: "rgba(15,23,42,0.85)",
+    background: "#f1f5f9",
+    border: "2px solid #cbd5e1",
     borderRadius: 16,
     padding: "12px 10px",
-    fontSize: 24,
-    fontWeight: 900,
+    fontSize: 26,
+    fontWeight: 950,
     transition: "background 0.3s, transform 0.3s",
   },
   tableRowSmall: {
     display: "grid",
-    gridTemplateColumns: "1fr 50px 50px 50px 50px",
+    gridTemplateColumns: "1fr 52px 52px 52px 52px",
     alignItems: "center",
-    background: "rgba(15,23,42,0.7)",
+    background: "#f1f5f9",
+    border: "2px solid #cbd5e1",
     borderRadius: 13,
     padding: "9px 10px",
-    fontSize: 18,
-    fontWeight: 800,
+    fontSize: 19,
+    fontWeight: 900,
     transition: "background 0.3s, transform 0.3s",
   },
   updatedRow: {
-    background: "rgba(250,204,21,0.24)",
-    boxShadow: "0 0 0 2px rgba(250,204,21,0.75)",
+    background: "#fef08a",
+    boxShadow: "0 0 0 4px rgba(202,138,4,0.5)",
     transform: "scale(1.01)",
   },
   gameCell: {
@@ -426,7 +443,7 @@ const styles: Record<string, React.CSSProperties> = {
     minWidth: 0,
   },
   newBadge: {
-    color: "#facc15",
+    color: "#854d0e",
     fontSize: 12,
     fontWeight: 950,
     letterSpacing: 0.8,
@@ -435,28 +452,30 @@ const styles: Record<string, React.CSSProperties> = {
     overflow: "hidden",
     whiteSpace: "nowrap",
     textOverflow: "ellipsis",
+    color: "#020617",
   },
   red: {
-    color: "#f87171",
+    color: "#dc2626",
     textAlign: "center",
   },
   yellow: {
-    color: "#fde047",
+    color: "#ca8a04",
     textAlign: "center",
   },
   green: {
-    color: "#4ade80",
+    color: "#16a34a",
     textAlign: "center",
   },
   blue: {
-    color: "#60a5fa",
+    color: "#2563eb",
     textAlign: "center",
   },
   rankingTitle: {
     margin: "0 0 20px",
-    fontSize: 34,
+    fontSize: 36,
     lineHeight: 1,
     fontWeight: 950,
+    color: "#020617",
   },
   rankingList: {
     display: "flex",
@@ -465,33 +484,36 @@ const styles: Record<string, React.CSSProperties> = {
   },
   rankingCard: {
     display: "grid",
-    gridTemplateColumns: "52px 18px 1fr auto",
+    gridTemplateColumns: "54px 18px 1fr auto",
     alignItems: "center",
     gap: 13,
-    background: "rgba(15,23,42,0.85)",
+    background: "#f1f5f9",
+    border: "2px solid #cbd5e1",
     borderRadius: 22,
     padding: "20px 18px",
   },
   rankingCardLeader: {
-    background: "linear-gradient(135deg, #facc15, #eab308)",
+    background: "#facc15",
+    border: "3px solid #ca8a04",
     color: "#111827",
   },
   medal: {
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: 950,
     textAlign: "center",
   },
   teamDot: {
-    width: 17,
-    height: 17,
+    width: 18,
+    height: 18,
     borderRadius: "50%",
   },
   teamName: {
-    fontSize: 31,
+    fontSize: 34,
     fontWeight: 950,
   },
   teamTotal: {
-    fontSize: 39,
+    fontSize: 56,
+    lineHeight: 1,
     fontWeight: 950,
   },
   compactRankingList: {
@@ -504,12 +526,13 @@ const styles: Record<string, React.CSSProperties> = {
     gridTemplateColumns: "38px 14px 1fr auto",
     alignItems: "center",
     gap: 10,
-    background: "rgba(15,23,42,0.82)",
+    background: "#f1f5f9",
+    border: "2px solid #cbd5e1",
     borderRadius: 16,
     padding: "12px 12px",
   },
   compactMedal: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: 950,
     textAlign: "center",
   },
@@ -519,11 +542,11 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: "50%",
   },
   compactTeamName: {
-    fontSize: 20,
+    fontSize: 21,
     fontWeight: 950,
   },
   compactTeamTotal: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 950,
   },
 };
