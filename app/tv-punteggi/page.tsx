@@ -35,12 +35,6 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function yesterdayISO() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
-}
-
 function formatDate(date: string) {
   return new Date(date + "T00:00:00").toLocaleDateString("it-IT", {
     weekday: "long",
@@ -113,17 +107,29 @@ export default function TvPunteggiPage() {
   }, []);
 
   const today = todayISO();
-  const yesterday = yesterdayISO();
 
   const todayScores = useMemo(
     () => scores.filter((s) => s.game_date === today),
     [scores, today]
   );
 
-  const yesterdayScores = useMemo(
-    () => scores.filter((s) => s.game_date === yesterday),
-    [scores, yesterday]
-  );
+  const previousGameDate = useMemo(() => {
+    const previousDates = [
+      ...new Set(
+        scores
+          .filter((s) => s.game_date < today)
+          .map((s) => s.game_date)
+      ),
+    ];
+
+    return previousDates[0] ?? null;
+  }, [scores, today]);
+
+  const previousScores = useMemo(() => {
+    if (!previousGameDate) return [];
+
+    return scores.filter((s) => s.game_date === previousGameDate);
+  }, [scores, previousGameDate]);
 
   const todayRanking = useMemo(() => buildRanking(todayScores), [todayScores]);
   const generalRanking = useMemo(() => buildRanking(scores), [scores]);
@@ -156,12 +162,18 @@ export default function TvPunteggiPage() {
         </div>
 
         <div style={styles.panelSmall}>
-          <h2 style={styles.panelTitleSmall}>Ieri</h2>
-          {yesterdayScores.length === 0 ? (
-            <p style={styles.emptySmall}>Nessun punteggio di ieri</p>
+          <h2 style={styles.panelTitleSmall}>
+            Ultimo giorno di gioco
+            {previousGameDate ? ` · ${formatDate(previousGameDate)}` : ""}
+          </h2>
+
+          {previousScores.length === 0 ? (
+            <p style={styles.emptySmall}>
+              Nessun punteggio precedente disponibile
+            </p>
           ) : (
             <ScoreTable
-              scores={yesterdayScores}
+              scores={previousScores}
               small
               lastChangedId={lastChangedId}
             />
