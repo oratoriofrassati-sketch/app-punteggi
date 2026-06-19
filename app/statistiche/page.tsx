@@ -153,6 +153,8 @@ export default function StatistichePage() {
       }
     }
 
+    console.log("PUNTI PER GIORNO", byDay);
+
     return teamsBase.map((team) => {
       let bestDate = "";
       let bestTotal = 0;
