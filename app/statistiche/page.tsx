@@ -135,7 +135,7 @@ export default function StatistichePage() {
     }));
   }, [scores]);
 
-  const bestDays = useMemo(() => {
+  const dayWins = useMemo(() => {
     const byDay: Record<string, Record<TeamKey, number>> = {};
 
     for (const score of scores) {
@@ -153,26 +153,31 @@ export default function StatistichePage() {
       }
     }
 
-    console.log("PUNTI PER GIORNO", byDay);
+    const result: Record<string, number> = {
+      Rossi: 0,
+      Gialli: 0,
+      Verdi: 0,
+      Blu: 0,
+    };
 
-    return teamsBase.map((team) => {
-      let bestDate = "";
-      let bestTotal = 0;
+    for (const values of Object.values(byDay)) {
+      const ranking = teamsBase
+        .map((team) => ({
+          name: team.name,
+          points: values[team.key],
+        }))
+        .sort((a, b) => b.points - a.points);
 
-      for (const [date, values] of Object.entries(byDay)) {
-        if (values[team.key] > bestTotal) {
-          bestTotal = values[team.key];
-          bestDate = date;
-        }
+      if (ranking[0]) {
+        result[ranking[0].name] += 1;
       }
+    }
 
-      return {
-        name: team.name,
-        color: team.color,
-        date: bestDate,
-        total: bestTotal,
-      };
-    });
+    return teamsBase.map((team) => ({
+      name: team.name,
+      color: team.color,
+      wins: result[team.name],
+    }));
   }, [scores]);
 
   const trend = useMemo(() => {
@@ -256,6 +261,22 @@ export default function StatistichePage() {
       </section>
 
       <section style={styles.card}>
+        <h2 style={styles.sectionTitle}>Giornate vinte</h2>
+        <div style={styles.simpleList}>
+          {dayWins.map((team) => (
+            <div key={team.name} style={styles.bestDayRow}>
+              <div>
+                <span style={{ ...styles.dot, background: team.color }} />
+                <strong style={styles.bestDayTeam}>{team.name}</strong>
+              </div>
+
+              <strong style={{ fontSize: 24 }}>{team.wins}</strong>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section style={styles.card}>
         <h2 style={styles.sectionTitle}>Podi</h2>
         <div style={styles.podiumHeader}>
           <span>Squadra</span>
@@ -281,24 +302,6 @@ export default function StatistichePage() {
               <span style={{ ...styles.dot, background: team.color }} />
               <strong>{team.name}</strong>
               <span>{team.average.toFixed(1)}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section style={styles.card}>
-        <h2 style={styles.sectionTitle}>Miglior giornata</h2>
-        <div style={styles.simpleList}>
-          {bestDays.map((team) => (
-            <div key={team.name} style={styles.bestDayRow}>
-              <div>
-                <span style={{ ...styles.dot, background: team.color }} />
-                <strong style={styles.bestDayTeam}>{team.name}</strong>
-              </div>
-              <div style={styles.bestDayData}>
-                <strong>{team.total}</strong>
-                <span>{team.date ? formatDate(team.date) : "-"}</span>
-              </div>
             </div>
           ))}
         </div>
