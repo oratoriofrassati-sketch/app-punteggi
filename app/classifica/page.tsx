@@ -35,10 +35,12 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function yesterdayISO() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return d.toISOString().slice(0, 10);
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 function formatTime(date: Date) {
@@ -66,6 +68,7 @@ export default function ClassificaMobilePage() {
       .from("game_scores")
       .select("*")
       .order("game_date", { ascending: false })
+      .order("display_order", { ascending: true })
       .order("created_at", { ascending: true });
 
     if (!error && data) {
@@ -92,17 +95,29 @@ export default function ClassificaMobilePage() {
   }, []);
 
   const today = todayISO();
-  const yesterday = yesterdayISO();
 
   const todayScores = useMemo(
     () => scores.filter((score) => score.game_date === today),
     [scores, today]
   );
 
-  const yesterdayScores = useMemo(
-    () => scores.filter((score) => score.game_date === yesterday),
-    [scores, yesterday]
-  );
+  const previousGameDate = useMemo(() => {
+    const previousDates = [
+      ...new Set(
+        scores
+          .filter((score) => score.game_date < today)
+          .map((score) => score.game_date)
+      ),
+    ];
+
+    return previousDates[0] ?? null;
+  }, [scores, today]);
+
+  const previousScores = useMemo(() => {
+    if (!previousGameDate) return [];
+
+    return scores.filter((score) => score.game_date === previousGameDate);
+  }, [scores, previousGameDate]);
 
   const generalRanking = useMemo(() => buildRanking(scores), [scores]);
   const todayRanking = useMemo(() => buildRanking(todayScores), [todayScores]);
@@ -114,11 +129,9 @@ export default function ClassificaMobilePage() {
         <p style={styles.updated}>Aggiornato alle {formatTime(lastUpdate)}</p>
       </header>
 
-<a href="/statistiche" style={styles.statsButton}>
-
-  Statistiche
-
-</a>
+      <a href="/statistiche" style={styles.statsButton}>
+        Statistiche
+      </a>
 
       <section style={styles.card}>
         <h2 style={styles.sectionTitle}>Classifica generale</h2>
@@ -140,11 +153,15 @@ export default function ClassificaMobilePage() {
       </section>
 
       <section style={styles.card}>
-        <h2 style={styles.sectionTitleMuted}>Ieri</h2>
-        {yesterdayScores.length === 0 ? (
-          <p style={styles.empty}>Nessun punteggio di ieri.</p>
+        <h2 style={styles.sectionTitleMuted}>
+          Ultimo giorno di gioco
+          {previousGameDate ? ` · ${formatDate(previousGameDate)}` : ""}
+        </h2>
+
+        {previousScores.length === 0 ? (
+          <p style={styles.empty}>Nessun punteggio precedente disponibile.</p>
         ) : (
-          <ScoreList scores={yesterdayScores} small />
+          <ScoreList scores={previousScores} small />
         )}
       </section>
     </main>
@@ -376,15 +393,15 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: 22,
     fontWeight: 950,
   },
-
   statsButton: {
-  display: "inline-block",
-  background: "#facc15",
-  color: "#111827",
-  textDecoration: "none",
-  padding: "12px 16px",
-  borderRadius: 12,
-  fontWeight: 900,
-  marginTop: 10,
-},
+    display: "inline-block",
+    background: "#facc15",
+    color: "#111827",
+    textDecoration: "none",
+    padding: "12px 16px",
+    borderRadius: 12,
+    fontWeight: 900,
+    marginTop: 10,
+    marginBottom: 14,
+  },
 };
